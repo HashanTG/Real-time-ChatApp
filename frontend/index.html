@@ -1,76 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat App</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.7/dist/tailwind.min.css"
-      rel="stylesheet"
-    />
-    <script
-      src="https://kit.fontawesome.com/a076d05399.js"
-      crossorigin="anonymous"
-    ></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-      .chat-window {
-        min-height: 450px;
-        max-height: 450px;
-        overflow-y: scroll;
-      }
-      body {
-        background: linear-gradient(180deg, #ffb7b7 0%, #727272 100%),
-          radial-gradient(60.91% 100% at 50% 0%, #ffd1d1 0%, #260000 100%),
-          linear-gradient(238.72deg, #ffdddd 0%, #720066 100%),
-          linear-gradient(127.43deg, #00ffff 0%, #ff4444 100%),
-          radial-gradient(100.22% 100% at 70.57% 0%, #ff0000 0%, #00ffe0 100%),
-          linear-gradient(127.43deg, #b7d500 0%, #3300ff 100%);
-        background-blend-mode: screen, overlay, hard-light, color-burn,
-          color-dodge, normal;
-        overflow: hidden;
-      }
-      .chat-window::-webkit-scrollbar {
-        display: none;
-      }
 
-      .chat-window {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-      }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.7/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    .chat-window {
+      min-height: 450px;
+      max-height: 450px;
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+      background: rgba(31, 41, 55, 0.85);
+      border-radius: 1rem 1rem 0 0;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
 
-  <body class="flex justify-center mt-14 h-screen">
-    <div class="w-full max-w-lg">
-      <div class="bg-gray-600 text-white rounded-t-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold mb-4">Chat Window</h2>
+    body {
+      background: linear-gradient(180deg, #ffb7b7 0%, #727272 100%),
+        radial-gradient(60.91% 100% at 50% 0%, #ffd1d1 0%, #260000 100%),
+        linear-gradient(238.72deg, #ffdddd 0%, #720066 100%),
+        linear-gradient(127.43deg, #00ffff 0%, #ff4444 100%),
+        radial-gradient(100.22% 100% at 70.57% 0%, #ff0000 0%, #00ffe0 100%),
+        linear-gradient(127.43deg, #b7d500 0%, #3300ff 100%);
+      background-blend-mode: screen, overlay, hard-light, color-burn,
+        color-dodge, normal;
+      overflow: hidden;
+    }
 
-        <div class="flex flex-col space-y-4 chat-window"></div>
+    .chat-window::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chat-window {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .chat-bubble {
+      transition: background 0.2s;
+    }
+
+    .chat-bubble:hover {
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .chat-avatar {
+      background: linear-gradient(135deg, #6366f1 0%, #f472b6 100%);
+    }
+  </style>
+</head>
+
+<body class="flex justify-center items-center min-h-screen">
+  <div class="w-full max-w-lg">
+    <div class="bg-gray-800 text-white rounded-t-2xl shadow-xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold tracking-tight">💬 Chat Room</h2>
+        <span
+          class="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-xs font-semibold uppercase tracking-wide">Online</span>
       </div>
-
-      <div class="bg-gray-600 rounded-b-lg shadow-md p-5">
-        <h1 class="text-2xl text-white font-semibold mb-4"></h1>
-
-        <form class="chat">
-          <div class="flex items-center mb-4">
-            <i class="fas fa-comment mr-2"></i>
-            <input
-              type="text"
-              class="border border-gray-300 rounded-lg px-4 py-2 flex-grow"
-              placeholder="Type your message here"
-              id="message"
-            />
-
-            <button
-              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg ml-2"
-            >
-              Send
-            </button>
-          </div>
-        </form>
-      </div>
+      <div class="flex flex-col space-y-3 chat-window px-2 py-2" id="messages"></div>
     </div>
-    <script src="script.js"></script>
-  </body>
+    <div class="bg-gray-900 rounded-b-2xl shadow-xl p-4 sticky bottom-0">
+      <form class="chat" autocomplete="off">
+        <div class="flex items-center">
+          <div
+            class="chat-avatar w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white mr-3 shadow-md">
+            U</div>
+          <input type="text"
+            class="border-none outline-none rounded-lg px-4 py-3 flex-grow bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 transition"
+            placeholder="Type your message..." id="message" maxlength="200" />
+          <button
+            class="ml-3 bg-gradient-to-r from-blue-500 to-pink-500 hover:from-pink-500 hover:to-blue-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg focus:outline-none transition"
+            type="submit">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+
 </html>

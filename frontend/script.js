@@ -1,46 +1,75 @@
-const chat = document.querySelector(".chat");
-const chatWindow = document.querySelector(".chat-window");
-let chatHistory = [];
-
 const socket = io();
+let username = "";
 
+// Listen for the initial data (chat history and username)
 socket.on("receive-messages", (data) => {
-  const { chatHistory, username } = data || {};
-  if (username !== undefined) updateUsername(username);
-  render(chatHistory);
+  if (data.username) username = data.username;
+  const messages = data.chatHistory || [];
+  renderMessages(messages);
 });
 
-chat.addEventListener("submit", function (e) {
+// Handle form submission
+document.querySelector(".chat").addEventListener("submit", (e) => {
   e.preventDefault();
-  sendMessage(chat.elements.message.value);
-  chat.elements.message.value = "";
+  const input = document.getElementById("message");
+  const msg = input.value.trim();
+  if (msg !== "") {
+    socket.emit("post-message", { message: msg });
+    input.value = "";
+  }
 });
 
-async function sendMessage(message) {
-  socket.emit("post-message", {
-    message,
+// Render messages with username and avatar
+function renderMessages(messages) {
+  const messagesList = document.getElementById("messages");
+  messagesList.innerHTML = "";
+  messages.forEach((msg) => {
+    const isMe = msg.username === username;
+    const bubbleAlign = isMe ? "justify-end" : "justify-start";
+    const bubbleColor = isMe
+      ? "bg-gradient-to-r from-blue-500 to-pink-500 text-white"
+      : "bg-gray-700 text-white";
+    const avatarBg = isMe
+      ? "bg-gradient-to-r from-blue-500 to-pink-500"
+      : "chat-avatar";
+    const initials = msg.username
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `flex ${bubbleAlign} items-end space-x-3 mb-2`;
+
+    // Avatar and username
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = `${avatarBg} w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md`;
+    avatarDiv.textContent = initials;
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = `flex flex-col max-w-xs`;
+
+    const nameDiv = document.createElement("span");
+    nameDiv.className = "text-xs font-semibold mb-1 ml-1";
+    nameDiv.textContent = msg.username;
+
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.className = `chat-bubble px-4 py-2 rounded-2xl rounded-bl-none shadow-md ${bubbleColor}`;
+    bubbleDiv.textContent = msg.message;
+
+    contentDiv.appendChild(nameDiv);
+    contentDiv.appendChild(bubbleDiv);
+
+    if (isMe) {
+      messageDiv.appendChild(contentDiv);
+      messageDiv.appendChild(avatarDiv);
+    } else {
+      messageDiv.appendChild(avatarDiv);
+      messageDiv.appendChild(contentDiv);
+    }
+
+    messagesList.appendChild(messageDiv);
   });
-}
 
-function render(chatHistory) {
-  const html = chatHistory
-    .map(function ({ username, message }) {
-      return messageTemplate(username, message);
-    })
-    .join("\n");
-  chatWindow.innerHTML = html;
-}
-
-function updateUsername(username) {
-  document.querySelector("h1").innerHTML = username;
-}
-
-function messageTemplate(username, message) {
-  return `<div class="flex items-center">
-            <div class="w-5 h-5 bg-green-400 text-white rounded-full flex items-center justify-center mr-2">
-              <i class="fas fa-user"></i>
-            </div>
-        <p class="text-gray-100 text-lg">${username}: ${message}</p>
-    </div>
-    `;
+  messagesList.scrollTop = messagesList.scrollHeight;
 }
