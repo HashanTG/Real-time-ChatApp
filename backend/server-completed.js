@@ -1,4 +1,3 @@
-// imports required for server
 import { uniqueNamesGenerator, colors, names } from "unique-names-generator";
 import express from "express";
 import http from "http";
